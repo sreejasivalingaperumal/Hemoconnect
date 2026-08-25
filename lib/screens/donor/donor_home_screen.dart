@@ -13,8 +13,6 @@ import 'search_screen.dart';
 import 'emergency_request_screen.dart';
 import 'profile_screen.dart';
 import '../about_screen.dart';
-import '../auth/login_screen.dart';
-
 
 /// Donor Portal Dashboard with Home hero banner, stats summary & navigation.
 class DonorHomeScreen extends StatefulWidget {
@@ -79,21 +77,22 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
     return Scaffold(
       body: Row(
         children: [
-          // Desktop Navigation Rail / Drawer
+          // Desktop Navigation Rail / Sidebar
           if (isDesktop) ...[
             NavigationRail(
               selectedIndex: _currentIndex,
               onDestinationSelected: _onNavigate,
               labelType: NavigationRailLabelType.all,
               leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     shape: BoxShape.circle,
+                    boxShadow: AppColors.primaryButtonGlow,
                   ),
-                  child: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 24),
+                  child: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 26),
                 ),
               ),
               destinations: const [
@@ -176,7 +175,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -188,35 +187,44 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$userName ',
+                    'Welcome back, $userName ',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          letterSpacing: -0.5,
                         ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Ready to make a difference today?',
-                    style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+                    'Ready to make a life-saving impact today?',
+                    style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
-                tooltip: 'About HemoConnect',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
-                  );
-                },
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+                  tooltip: 'About HemoConnect',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AboutScreen()),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
           // Main Hero Banner Card
           PremiumCard(
-            gradient: AppColors.primaryGradient,
-            padding: const EdgeInsets.all(24),
+            gradient: AppColors.heroCardGradient,
+            padding: const EdgeInsets.all(28),
+            borderRadius: 24,
             child: Row(
               children: [
                 Expanded(
@@ -224,52 +232,56 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.white24,
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white30),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.water_drop_rounded, color: Colors.white, size: 14),
-                            SizedBox(width: 4),
+                            SizedBox(width: 6),
                             Text(
                               'Save Lives Today',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       const Text(
                         'Your Donation Can\nSave Up To 3 Lives',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
                           color: Colors.white,
-                          height: 1.2,
+                          height: 1.15,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primary,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          shadowColor: Colors.black26,
                         ),
-                        icon: const Icon(Icons.favorite_rounded, size: 18),
+                        icon: const Icon(Icons.favorite_rounded, size: 19),
                         label: const Text(
                           'Donate Now',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         onPressed: () => _onNavigate(2), // Switch to Donate screen
                       ),
@@ -279,20 +291,32 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                 const SizedBox(width: 16),
                 const Icon(
                   Icons.volunteer_activism_rounded,
-                  size: 90,
+                  size: 100,
                   color: Colors.white24,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
 
           // Quick Action Section
-          const Text(
-            'Quick Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Quick Actions',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              ),
+              Text(
+                'Tap to navigate',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
             shrinkWrap: true,
@@ -303,6 +327,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
             children: [
               _buildActionCard(
                 title: 'Donate Blood',
+                subtitle: 'Submit volunteer application',
                 icon: Icons.water_drop_rounded,
                 color: AppColors.primary,
                 bgColor: const Color(0xFFFFE6EC),
@@ -310,6 +335,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
               ),
               _buildActionCard(
                 title: 'Find Donors',
+                subtitle: 'Lookup active donors',
                 icon: Icons.search_rounded,
                 color: AppColors.info,
                 bgColor: AppColors.infoBg,
@@ -317,6 +343,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
               ),
               _buildActionCard(
                 title: 'Emergency',
+                subtitle: 'Urgent blood request',
                 icon: Icons.warning_amber_rounded,
                 color: AppColors.danger,
                 bgColor: AppColors.dangerBg,
@@ -324,6 +351,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
               ),
               _buildActionCard(
                 title: 'My Profile',
+                subtitle: 'Manage account info',
                 icon: Icons.person_rounded,
                 color: AppColors.success,
                 bgColor: AppColors.successBg,
@@ -331,14 +359,14 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
 
           // Mini Statistics & Status Row
           const Text(
             'Donation Overview',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -350,7 +378,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                   iconBgColor: AppColors.accent.withOpacity(0.3),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: StatCard(
                   title: 'Donation Status',
@@ -366,7 +394,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Active Application Banner if Pending
           if (_myDonorApplication != null) ...[
@@ -376,7 +404,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.warningBg,
                       shape: BoxShape.circle,
                     ),
@@ -389,7 +417,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                       children: [
                         const Text(
                           'Application Verification Status',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -413,6 +441,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
 
   Widget _buildActionCard({
     required String title,
+    required String subtitle,
     required IconData icon,
     required Color color,
     required Color bgColor,
@@ -420,26 +449,44 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
   }) {
     return PremiumCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
               color: bgColor,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
-          const SizedBox(height: 10),
+          const Spacer(),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
             ),
-            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondaryLight,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

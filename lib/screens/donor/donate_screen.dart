@@ -77,7 +77,7 @@ class _DonateScreenState extends State<DonateScreen> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-        withData: true, // Loads file bytes into memory for cross-platform support
+        withData: true,
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -124,7 +124,6 @@ class _DonateScreenState extends State<DonateScreen> {
     try {
       String? reportStoragePath;
 
-      // Upload file to Supabase Storage if picked
       if (_pickedFile != null && _pickedFile!.bytes != null) {
         reportStoragePath = await _storageService.uploadMedicalReport(
           userId: user.id,
@@ -133,7 +132,6 @@ class _DonateScreenState extends State<DonateScreen> {
         );
       }
 
-      // Create Donor Record in Supabase
       await _donorService.createDonorRegistration(
         userId: user.id,
         name: _nameController.text.trim(),
@@ -173,66 +171,63 @@ class _DonateScreenState extends State<DonateScreen> {
       return _buildSuccessScreen();
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donate Blood Registration'),
+        title: const Text('Volunteer Donor Application'),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 680),
+            constraints: const BoxConstraints(maxWidth: 720),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Step Indicator Header
-                Row(
-                  children: List.generate(4, (index) {
-                    final isActive = index <= _currentStep;
-                    return Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isActive ? AppColors.primary : AppColors.borderLight,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                // Enhanced Step Wizard Progress Bar
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.cardDark : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    );
-                  }),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildStepIconBadge(0, Icons.person_outline_rounded, 'Personal'),
+                          _buildStepConnector(0),
+                          _buildStepIconBadge(1, Icons.water_drop_outlined, 'Blood Group'),
+                          _buildStepConnector(1),
+                          _buildStepIconBadge(2, Icons.health_and_safety_outlined, 'Health'),
+                          _buildStepConnector(2),
+                          _buildStepIconBadge(3, Icons.cloud_upload_outlined, 'Report'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Step ${_currentStep + 1} of 4',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    Text(
-                      _getStepTitle(_currentStep),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
                 // Step Content Box
                 PremiumCard(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(28),
                   child: _buildCurrentStepWidget(),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-                // Navigation Buttons
+                // Navigation Buttons Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -241,23 +236,26 @@ class _DonateScreenState extends State<DonateScreen> {
                         text: 'Back',
                         variant: AppButtonVariant.outline,
                         onPressed: () => setState(() => _currentStep--),
-                        height: 46,
+                        height: 48,
+                        width: 120,
                       )
                     else
                       const SizedBox.shrink(),
                     if (_currentStep < 3)
                       AppButton(
-                        text: 'Next Step',
+                        text: 'Next Step →',
                         onPressed: () => setState(() => _currentStep++),
-                        height: 46,
+                        height: 48,
+                        width: 140,
                       )
                     else
                       AppButton(
-                        text: 'Submit for Verification',
+                        text: 'Submit Application',
                         variant: AppButtonVariant.primary,
                         isLoading: _isUploading,
                         onPressed: _submitDonorApplication,
-                        height: 46,
+                        height: 48,
+                        width: 200,
                       ),
                   ],
                 ),
@@ -269,19 +267,57 @@ class _DonateScreenState extends State<DonateScreen> {
     );
   }
 
-  String _getStepTitle(int step) {
-    switch (step) {
-      case 0:
-        return 'Personal Info';
-      case 1:
-        return 'Blood Group';
-      case 2:
-        return 'Health Info';
-      case 3:
-        return 'Medical Report';
-      default:
-        return '';
-    }
+  Widget _buildStepIconBadge(int stepIndex, IconData icon, String label) {
+    final isActive = stepIndex == _currentStep;
+    final isDone = stepIndex < _currentStep;
+
+    Color color = AppColors.textMutedLight;
+    if (isActive) color = AppColors.primary;
+    if (isDone) color = AppColors.success;
+
+    return Column(
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.primary
+                : (isDone ? AppColors.successBg : AppColors.primary.withOpacity(0.08)),
+            shape: BoxShape.circle,
+            boxShadow: isActive ? AppColors.primaryButtonGlow : null,
+          ),
+          child: Icon(
+            isDone ? Icons.check_rounded : icon,
+            size: 20,
+            color: isActive ? Colors.white : (isDone ? AppColors.success : AppColors.textSecondaryLight),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isActive || isDone ? FontWeight.bold : FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepConnector(int afterStep) {
+    final isDone = afterStep < _currentStep;
+    return Expanded(
+      child: Container(
+        height: 3,
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: isDone ? AppColors.success : AppColors.borderLight,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
   }
 
   Widget _buildCurrentStepWidget() {
@@ -305,22 +341,22 @@ class _DonateScreenState extends State<DonateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Personal Information',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          'Personal Contact Details',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.3),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text(
-          'Verify your contact details for emergency donor dispatch.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+          'Verify your location and phone number for emergency blood dispatch matching.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         AppTextField(
           controller: _nameController,
           label: 'Full Name',
           hint: 'Enter your full name',
           prefixIcon: Icons.person_outline_rounded,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         AppTextField(
           controller: _phoneController,
           label: 'Contact Phone Number',
@@ -328,10 +364,10 @@ class _DonateScreenState extends State<DonateScreen> {
           prefixIcon: Icons.phone_outlined,
           keyboardType: TextInputType.phone,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         AppTextField(
           controller: _cityController,
-          label: 'City / Location',
+          label: 'City / Current Region',
           hint: 'Enter your city',
           prefixIcon: Icons.location_on_outlined,
         ),
@@ -345,18 +381,18 @@ class _DonateScreenState extends State<DonateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Select Blood Group',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          'Select Your Blood Group',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.3),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text(
-          'Choose your blood group accurately for inventory matching.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+          'Accurate blood group information ensures rapid matching during patient emergencies.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 14,
+          runSpacing: 14,
           children: _bloodGroups.map((group) {
             final isSelected = _selectedBloodGroup == group;
             return BloodGroupChip(
@@ -376,67 +412,65 @@ class _DonateScreenState extends State<DonateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Health & Lifestyle Declaration',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          'Health & Medical Declaration',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.3),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text(
-          'Help us verify donation safety for recipient patients.',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+          'Safe donation screening helps protect both donor health and recipient patients.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         AppTextField(
           controller: _conditionController,
-          label: 'Medical Conditions / History (If Any)',
-          hint: 'e.g. None, Diabetes, Mild Hypertension, Asthma',
+          label: 'Medical Conditions / Past Surgeries (If Any)',
+          hint: 'e.g. None, Mild Diabetes, Controlled Asthma',
           prefixIcon: Icons.medical_services_outlined,
           maxLines: 2,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         const Text(
-          'Alcohol Consumption',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          'Alcohol Usage',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
-        Row(
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
           children: ['No', 'Occasionally', 'Regularly'].map((option) {
             final isSelected = _alcoholUsage == option;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ChoiceChip(
-                label: Text(option),
-                selected: isSelected,
-                onSelected: (_) => setState(() => _alcoholUsage = option),
-                selectedColor: AppColors.primary.withOpacity(0.15),
-                labelStyle: TextStyle(
-                  color: isSelected ? AppColors.primary : null,
-                  fontWeight: isSelected ? FontWeight.bold : null,
-                ),
+            return ChoiceChip(
+              label: Text(option),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _alcoholUsage = option),
+              selectedColor: AppColors.primary.withOpacity(0.18),
+              labelStyle: TextStyle(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             );
           }).toList(),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         const Text(
           'Smoking Habit',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
-        Row(
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
           children: ['No', 'Occasionally', 'Regularly'].map((option) {
             final isSelected = _smokingHabit == option;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ChoiceChip(
-                label: Text(option),
-                selected: isSelected,
-                onSelected: (_) => setState(() => _smokingHabit = option),
-                selectedColor: AppColors.primary.withOpacity(0.15),
-                labelStyle: TextStyle(
-                  color: isSelected ? AppColors.primary : null,
-                  fontWeight: isSelected ? FontWeight.bold : null,
-                ),
+            return ChoiceChip(
+              label: Text(option),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _smokingHabit = option),
+              selectedColor: AppColors.primary.withOpacity(0.18),
+              labelStyle: TextStyle(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             );
           }).toList(),
         ),
@@ -451,42 +485,48 @@ class _DonateScreenState extends State<DonateScreen> {
       children: [
         const Text(
           'Upload Medical Clearance Report',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.3),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text(
-          'Upload a recent blood lab report or medical clearance certificate (PDF, JPG, PNG).',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+          'Attach a recent blood test lab report or medical clearance certificate (PDF, JPG, PNG).',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         if (_pickedFile == null)
           InkWell(
             onTap: _pickMedicalReport,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.04),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.3),
-                  style: BorderStyle.solid,
-                  width: 1.5,
+                  color: AppColors.primary.withOpacity(0.35),
+                  width: 1.8,
                 ),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 48, color: AppColors.primary),
-                  SizedBox(height: 12),
-                  Text(
-                    'Click to upload medical document',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.cloud_upload_outlined, size: 40, color: AppColors.primary),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Supported formats: PDF, JPG, JPEG, PNG (Max 10MB)',
-                    style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Click to Browse & Upload File',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Supports PDF, JPG, JPEG, PNG (Max 10MB)',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
                   ),
                 ],
               ),
@@ -494,36 +534,43 @@ class _DonateScreenState extends State<DonateScreen> {
           )
         else
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: AppColors.successBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.success.withOpacity(0.35)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.insert_drive_file_rounded, color: AppColors.success, size: 32),
-                const SizedBox(width: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.insert_drive_file_rounded, color: AppColors.success, size: 28),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _pickedFile!.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
-                        '${(_pickedFile!.size / 1024).toStringAsFixed(1)} KB • Ready to upload',
-                        style: const TextStyle(fontSize: 11, color: AppColors.success),
+                        '${(_pickedFile!.size / 1024).toStringAsFixed(1)} KB • Ready for verification upload',
+                        style: const TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.danger),
+                  icon: const Icon(Icons.cancel_rounded, color: AppColors.danger),
                   onPressed: () => setState(() => _pickedFile = null),
                 ),
               ],
@@ -537,45 +584,99 @@ class _DonateScreenState extends State<DonateScreen> {
   Widget _buildSuccessScreen() {
     return Scaffold(
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: AppColors.successBg,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_circle_rounded, size: 72, color: AppColors.success),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: PremiumCard(
+              padding: const EdgeInsets.all(36),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: const BoxDecoration(
+                      color: AppColors.successBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.favorite_rounded, size: 64, color: AppColors.success),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Application Submitted! ❤️',
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Your volunteer donor application has been securely received by HemoConnect administration. Our medical team is reviewing your clearance.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondaryLight, height: 1.5),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Verification Timeline Steps
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _TimelineStep('Application', 'Submitted', true),
+                        Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary),
+                        _TimelineStep('Verification', 'Pending', true),
+                        Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.textMutedLight),
+                        _TimelineStep('Donor Matching', 'Active', false),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  AppButton(
+                    text: 'Return to Dashboard',
+                    onPressed: () {
+                      setState(() {
+                        _isSubmitted = false;
+                        _currentStep = 0;
+                      });
+                    },
+                    height: 50,
+                    width: double.infinity,
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Application Submitted ❤️',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Your donor profile is waiting for admin verification.\nThank you for volunteering to save lives!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondaryLight, height: 1.5),
-              ),
-              const SizedBox(height: 32),
-              AppButton(
-                text: 'Return to Dashboard',
-                onPressed: () {
-                  setState(() {
-                    _isSubmitted = false;
-                    _currentStep = 0;
-                  });
-                },
-                height: 48,
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TimelineStep extends StatelessWidget {
+  final String title;
+  final String status;
+  final bool isDone;
+
+  const _TimelineStep(this.title, this.status, this.isDone);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(
+          status,
+          style: TextStyle(
+            fontSize: 10,
+            color: isDone ? AppColors.primary : AppColors.textMutedLight,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

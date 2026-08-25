@@ -3,6 +3,7 @@ import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/premium_card.dart';
 import '../donor/donor_home_screen.dart';
 
 /// User registration screen creating Supabase Auth account & initial profile row.
@@ -23,8 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   final AuthService _authService = AuthService();
-  String _selectedBloodGroup = 'O+';
+  String _selectedBloodGroup = 'A+';
   bool _isLoading = false;
+  String? _apiErrorMessage;
 
   final List<String> _bloodGroups = [
     'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
@@ -54,7 +56,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _apiErrorMessage = null;
+    });
 
     try {
       final profile = await _authService.register(
@@ -81,12 +86,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: AppColors.danger,
-        ),
-      );
+
+      final errStr = e.toString();
+      if (errStr.contains('Invalid API key') || errStr.contains('401')) {
+        setState(() {
+          _apiErrorMessage =
+              '⚠️ Supabase Connection Error: Your API key in "lib/config/supabase_config.dart" is invalid or incorrect. Please copy your valid anon key from your Supabase Dashboard (Project Settings -> API).';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errStr.replaceAll('Exception: ', '').replaceAll('AuthApiException(message: ', '').replaceAll(', statusCode: 401, code: null)', '')),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -104,187 +118,342 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 520),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Join HemoConnect',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Register as a life-saving blood donor today',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Full Name Input
-                  AppTextField(
-                    controller: _nameController,
-                    label: 'Full Name',
-                    hint: 'John Doe',
-                    prefixIcon: Icons.person_outline_rounded,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Full name is required';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email & Phone Row
-                  Row(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.bgDark : AppColors.bgLight,
+          image: DecorationImage(
+            image: const AssetImage('assets/images/mesh_bg.png'),
+            fit: BoxFit.cover,
+            opacity: isDark ? 0.05 : 0.03,
+            onError: (_, __) {},
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 580),
+              child: PremiumCard(
+                padding: const EdgeInsets.all(32),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: AppTextField(
-                          controller: _emailController,
-                          label: 'Email',
-                          hint: 'name@example.com',
-                          prefixIcon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'Email is required';
-                            if (!val.contains('@')) return 'Enter valid email';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: AppTextField(
-                          controller: _phoneController,
-                          label: 'Phone Number',
-                          hint: '+1 234 567 8900',
-                          prefixIcon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'Phone is required';
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // City & Blood Group Dropdown
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppTextField(
-                          controller: _cityController,
-                          label: 'City / Region',
-                          hint: 'New York',
-                          prefixIcon: Icons.location_on_outlined,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'City is required';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Blood Group',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      // Header Branding Row
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: AppColors.primaryButtonGlow,
                             ),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              value: _selectedBloodGroup,
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(Icons.water_drop_outlined, size: 20),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            child: const Icon(
+                              Icons.water_drop_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Join HemoConnect',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Register as a life-saving blood donor today',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // API Key Error Banner Alert if misconfigured
+                      if (_apiErrorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.dangerBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.danger.withOpacity(0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _apiErrorMessage!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.danger,
+                                    height: 1.4,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                              items: _bloodGroups.map((group) {
-                                return DropdownMenuItem(
-                                  value: group,
-                                  child: Text(group, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedBloodGroup = val);
-                              },
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Full Name Input
+                      AppTextField(
+                        controller: _nameController,
+                        label: 'Full Name',
+                        hint: 'John Doe',
+                        prefixIcon: Icons.person_outline_rounded,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Full name is required';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Email & Phone Row
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 460;
+                          if (isNarrow) {
+                            return Column(
+                              children: [
+                                AppTextField(
+                                  controller: _emailController,
+                                  label: 'Email Address',
+                                  hint: 'name@example.com',
+                                  prefixIcon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                                    if (!val.contains('@')) return 'Enter valid email';
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 18),
+                                AppTextField(
+                                  controller: _phoneController,
+                                  label: 'Phone Number',
+                                  hint: '+1 234 567 8900',
+                                  prefixIcon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Phone is required';
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: AppTextField(
+                                  controller: _emailController,
+                                  label: 'Email Address',
+                                  hint: 'name@example.com',
+                                  prefixIcon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                                    if (!val.contains('@')) return 'Enter valid email';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: AppTextField(
+                                  controller: _phoneController,
+                                  label: 'Phone Number',
+                                  hint: '+1 234 567 8900',
+                                  prefixIcon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Phone is required';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // City & Blood Group Dropdown Row
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 460;
+                          final cityWidget = AppTextField(
+                            controller: _cityController,
+                            label: 'City / Region',
+                            hint: 'New York',
+                            prefixIcon: Icons.location_on_outlined,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'City is required';
+                              return null;
+                            },
+                          );
+
+                          final bloodWidget = Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Blood Group',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedBloodGroup,
+                                    isExpanded: true,
+                                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary),
+                                    items: _bloodGroups.map((group) {
+                                      return DropdownMenuItem(
+                                        value: group,
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.water_drop_rounded, size: 16, color: AppColors.primary),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              group,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _selectedBloodGroup = val);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+
+                          if (isNarrow) {
+                            return Column(
+                              children: [
+                                cityWidget,
+                                const SizedBox(height: 18),
+                                bloodWidget,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: cityWidget),
+                              const SizedBox(width: 14),
+                              Expanded(child: bloodWidget),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Password Inputs
+                      AppTextField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        hint: '••••••••',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        isPassword: true,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'Password is required';
+                          if (val.length < 6) return 'Password must be at least 6 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      AppTextField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirm Password',
+                        hint: '••••••••',
+                        prefixIcon: Icons.lock_clock_outlined,
+                        isPassword: true,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'Confirm password is required';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Submit Button
+                      AppButton(
+                        text: 'Create Account',
+                        onPressed: _handleRegister,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                        height: 52,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Sign In Link
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Already have an account?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // Password Inputs
-                  AppTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    hint: '••••••••',
-                    prefixIcon: Icons.lock_outline_rounded,
-                    isPassword: true,
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Password is required';
-                      if (val.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  AppTextField(
-                    controller: _confirmPasswordController,
-                    label: 'Confirm Password',
-                    hint: '••••••••',
-                    prefixIcon: Icons.lock_clock_outlined,
-                    isPassword: true,
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Confirm password is required';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Submit Button
-                  AppButton(
-                    text: 'Create Account',
-                    onPressed: _handleRegister,
-                    isLoading: _isLoading,
-                    width: double.infinity,
-                    height: 50,
-                  ),
-                  const SizedBox(height: 16),
-
-                  Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Already have an account? Sign In'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

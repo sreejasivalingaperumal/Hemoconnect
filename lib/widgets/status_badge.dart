@@ -44,23 +44,31 @@ class StatusBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: fg.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: fg.withOpacity(0.35), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: fg.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: fontSize + 3, color: fg),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           Text(
             status,
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: fg,
+              letterSpacing: 0.2,
             ),
           ),
         ],

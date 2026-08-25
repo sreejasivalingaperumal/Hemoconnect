@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Blood group selection chip with active gradient & badge styling.
-class BloodGroupChip extends StatelessWidget {
+/// Blood group selection chip with active gradient & glowing badge styling.
+class BloodGroupChip extends StatefulWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
@@ -17,76 +17,108 @@ class BloodGroupChip extends StatelessWidget {
   });
 
   @override
+  State<BloodGroupChip> createState() => _BloodGroupChipState();
+}
+
+class _BloodGroupChipState extends State<BloodGroupChip> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: isSelected ? AppColors.primaryGradient : null,
-          color: isSelected
-              ? null
-              : Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.surfaceDark
-                  : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.borderDark
-                    : AppColors.borderLight,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.water_drop_rounded,
-              size: 16,
-              color: isSelected ? Colors.white : AppColors.primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: isSelected
-                    ? Colors.white
-                    : Theme.of(context).textTheme.bodyLarge?.color,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isHovered ? 1.05 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+            decoration: BoxDecoration(
+              gradient: widget.isSelected ? AppColors.primaryGradient : null,
+              color: widget.isSelected
+                  ? null
+                  : (isDark ? AppColors.cardDark : AppColors.surfaceLight),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: widget.isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                width: widget.isSelected ? 1.8 : 1.0,
               ),
+              boxShadow: widget.isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
-            if (count != null) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white24 : AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: widget.isSelected
+                        ? Colors.white24
+                        : AppColors.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.water_drop_rounded,
+                    size: 14,
+                    color: widget.isSelected ? Colors.white : AppColors.primary,
+                  ),
                 ),
-                child: Text(
-                  count!,
+                const SizedBox(width: 8),
+                Text(
+                  widget.label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : AppColors.primary,
+                    letterSpacing: 0.2,
+                    color: widget.isSelected
+                        ? Colors.white
+                        : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
                   ),
                 ),
-              ),
-            ],
-          ],
+                if (widget.count != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: widget.isSelected
+                          ? Colors.white.withOpacity(0.25)
+                          : AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      widget.count!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isSelected ? Colors.white : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
